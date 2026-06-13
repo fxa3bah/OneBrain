@@ -58,12 +58,27 @@ apart, and there's no single place to ask. Classic agent amnesia, times four.
 
 A rendered architecture diagram is in [`docs/architecture.html`](docs/architecture.html).
 
+## Orchestration (optional, recommended)
+
+The brain is passive — so you can put any agent *in charge* of it. Designate one agent as an
+**orchestrator** that runs on a schedule, reads context from the brain, dispatches work to the
+others, and writes results back to the vault. Two real, MCP-native runtimes with built-in cron
+and sub-agent fan-out are documented end to end in [`docs/orchestrator.md`](docs/orchestrator.md):
+
+- **[OpenClaw](https://docs.openclaw.ai/)** — gateway + agent runtime, multi-agent routing.
+- **[Hermes (Nous Research)](https://hermes-agent.nousresearch.com/docs/)** — autonomous agent, built-in cron, spawns subagents.
+
+Each connects to OneBrain as a remote HTTP MCP server with one config block (exact syntax for
+both in the doc). You don't *need* one — any worker agent can orchestrate on-demand — but an
+orchestrator makes the loop persistent and scheduled.
+
 ## What's in this repo
 
 ```
 bin/                    wrapper scripts (serve, sync, enrichment, env, desktop bridge)
 launchagents/           macOS LaunchAgents (auto-start, survive reboot)
 docs/clients.md         how to wire Claude / Codex / Grok / a gateway / Claude Desktop
+docs/orchestrator.md    put an agent in charge: OpenClaw / Hermes (Nous) integration
 docs/troubleshooting.md every lesson that bit during the build
 docs/architecture.html  the architecture infographic
 install.sh              one-command install (idempotent)
