@@ -1,0 +1,78 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0">
+<div id="card" style="width:1000px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;color:#0f172a;padding:0">
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#2563eb,#1e40af);padding:34px 40px;color:#fff">
+    <div style="font-size:40px;font-weight:700;letter-spacing:-0.5px">OneBrain</div>
+    <div style="font-size:17px;opacity:0.92;margin-top:6px">One vault &#183; one brain &#183; four AI agents &#183; 100% local</div>
+  </div>
+
+  <!-- Stat strip -->
+  <div style="display:flex;background:#fff;border-bottom:1px solid #e2e8f0">
+    <div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid #e2e8f0"><div style="font-size:26px;font-weight:700;color:#2563eb">248</div><div style="font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">vault notes</div></div>
+    <div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid #e2e8f0"><div style="font-size:26px;font-weight:700;color:#2563eb">82</div><div style="font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">brain tools</div></div>
+    <div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid #e2e8f0"><div style="font-size:26px;font-weight:700;color:#16a34a">100%</div><div style="font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">offline</div></div>
+    <div style="flex:1;text-align:center;padding:16px 8px"><div style="font-size:26px;font-weight:700;color:#f59e0b">$0</div><div style="font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">api cost</div></div>
+  </div>
+
+  <div style="padding:32px 40px">
+
+    <!-- Layer 1: Vault -->
+    <div style="background:#fff;border:2px solid #2563eb;border-radius:12px;padding:20px 24px;box-shadow:0 4px 12px rgba(15,23,42,0.10)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:21px;font-weight:700;color:#1e40af">&#128218; Obsidian Vault</div>
+        <div style="font-size:12px;font-weight:700;color:#15803d;background:#f0fdf4;border:1px solid #16a34a;border-radius:20px;padding:3px 12px">SOURCE OF TRUTH</div>
+      </div>
+      <div style="font-size:14px;color:#475569;margin-top:8px">All durable knowledge as plain Markdown &#183; local folder, Obsidian Sync only (off iCloud) &#183; People, Companies, Projects, Areas, Daily</div>
+    </div>
+
+    <!-- arrow -->
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:24px;color:#94a3b8;line-height:1">&#8595;</div>
+      <div style="font-size:12px;color:#475569;background:#f1f5f9;display:inline-block;border-radius:20px;padding:3px 12px">auto-sync every 5 min &#183; PGLite-safe (serve bounces around writes)</div>
+    </div>
+
+    <!-- Layer 2: gbrain -->
+    <div style="background:#fff;border:2px solid #0ea5e9;border-radius:12px;padding:20px 24px;box-shadow:0 4px 12px rgba(15,23,42,0.10)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:21px;font-weight:700;color:#075985">&#129504; gbrain &#183; the brain layer <span style="font-size:13px;font-weight:600;color:#94a3b8">v0.42.42 (pinned)</span></div>
+        <div style="font-size:12px;font-weight:700;color:#075985;background:#f0f9ff;border:1px solid #0ea5e9;border-radius:20px;padding:3px 12px">127.0.0.1:3131</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center"><div style="font-size:14px;font-weight:700">PGLite index</div><div style="font-size:12px;color:#475569;margin-top:2px">embedded Postgres</div></div>
+        <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center"><div style="font-size:14px;font-weight:700">nomic-embed</div><div style="font-size:12px;color:#475569;margin-top:2px">local Ollama, no API</div></div>
+        <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center"><div style="font-size:14px;font-weight:700">knowledge graph</div><div style="font-size:12px;color:#475569;margin-top:2px">typed edges</div></div>
+        <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center"><div style="font-size:14px;font-weight:700">synthesis</div><div style="font-size:12px;color:#475569;margin-top:2px">answers, not pages</div></div>
+      </div>
+    </div>
+
+    <!-- arrow -->
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:24px;color:#94a3b8;line-height:1">&#8595;</div>
+      <div style="font-size:12px;color:#475569;background:#f1f5f9;display:inline-block;border-radius:20px;padding:3px 12px">one HTTP MCP server &#183; loopback &#183; bearer-token auth</div>
+    </div>
+
+    <!-- Layer 3: agents -->
+    <div style="display:flex;gap:12px">
+      <div style="flex:1;background:linear-gradient(135deg,#2563eb,#1e40af);border-radius:10px;padding:18px 10px;text-align:center;color:#fff"><div style="font-size:18px;font-weight:700">Claude</div><div style="font-size:11px;opacity:0.85;margin-top:2px">Code</div></div>
+      <div style="flex:1;background:linear-gradient(135deg,#2563eb,#1e40af);border-radius:10px;padding:18px 10px;text-align:center;color:#fff"><div style="font-size:18px;font-weight:700">Codex</div><div style="font-size:11px;opacity:0.85;margin-top:2px">CLI</div></div>
+      <div style="flex:1;background:linear-gradient(135deg,#2563eb,#1e40af);border-radius:10px;padding:18px 10px;text-align:center;color:#fff"><div style="font-size:18px;font-weight:700">Grok</div><div style="font-size:11px;opacity:0.85;margin-top:2px">Build</div></div>
+      <div style="flex:1;background:linear-gradient(135deg,#2563eb,#1e40af);border-radius:10px;padding:18px 10px;text-align:center;color:#fff"><div style="font-size:18px;font-weight:700">Gateway</div><div style="font-size:11px;opacity:0.85;margin-top:2px">bot / bridge</div></div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:#475569;margin-top:10px">All four query the <b>same</b> brain. Ask any one, get the same answer from the same memory.</div>
+
+    <!-- Safety / properties strip -->
+    <div style="display:flex;gap:12px;margin-top:26px">
+      <div style="flex:1;background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;padding:12px 14px"><div style="font-size:13px;font-weight:700;color:#15803d">&#128274; Secrets evicted</div><div style="font-size:12px;color:#475569;margin-top:3px">40+ keys pulled out of the vault into a 600-perm secrets file. Nothing sensitive is indexed.</div></div>
+      <div style="flex:1;background:#fff7ed;border:1px solid #f97316;border-radius:8px;padding:12px 14px"><div style="font-size:13px;font-weight:700;color:#9a3412">&#127769; Sandboxed enrichment</div><div style="font-size:12px;color:#475569;margin-top:3px">Nightly self-tidy with a kill-switch + watchdog that self-disables on a restart storm.</div></div>
+      <div style="flex:1;background:#f0f9ff;border:1px solid #0ea5e9;border-radius:8px;padding:12px 14px"><div style="font-size:13px;font-weight:700;color:#075985">&#9889; Auto-start on boot</div><div style="font-size:12px;color:#475569;margin-top:3px">5 LaunchAgents survive reboot. Git baselines make every step reversible.</div></div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#0f172a;color:#94a3b8;font-size:12px;padding:14px 40px">OneBrain &#183; Obsidian + gbrain + local Ollama, unified over MCP &#183; built 2026-06-12 &#183; 100% on-device</div>
+
+</div>
+</body></html>

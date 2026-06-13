@@ -1,0 +1,27 @@
+# OneBrain — never commit secrets, local state, or personal data
+.env
+.env.local
+*.local
+secrets/
+.secrets/
+
+# Runtime / local state (machine-specific)
+logs/
+*.log
+*.lock.d/
+last-synced-commit
+enrichment-starts.log
+ENRICHMENT_DISABLED
+ENRICHMENT_TIER
+
+# The vault itself is YOUR private knowledge — never vendor it here
+vault/
+Obsidian/
+
+# gbrain checkout / DB (rebuildable index, not source)
+gbrain/
+*.pglite
+pgdata/
+
+# OS noise
+.DS_Store
