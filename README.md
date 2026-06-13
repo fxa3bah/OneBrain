@@ -9,6 +9,8 @@ Obsidian and all of them see it.
 
 It is not a new database or model. The actual brain is **[gbrain](https://github.com/garrytan/gbrain)**.
 
+![OneBrain architecture: one Obsidian vault feeds gbrain, served over one local MCP endpoint to Claude, Codex, Grok, and a gateway](docs/architecture.png)
+
 ---
 
 ## Credit: gbrain by Garry Tan
@@ -56,7 +58,8 @@ apart, and there's no single place to ask. Classic agent amnesia, times four.
   machine, $0 per query.
 - **Clients:** every agent wired to the one HTTP MCP endpoint, each in its own config.
 
-A rendered architecture diagram is in [`docs/architecture.html`](docs/architecture.html).
+The diagram above is also an interactive HTML card in [`docs/architecture.html`](docs/architecture.html).
+For the story of how and why this was built, see [`docs/how-i-built-this.md`](docs/how-i-built-this.md).
 
 ## Orchestration (optional, recommended)
 
