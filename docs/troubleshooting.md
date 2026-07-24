@@ -120,3 +120,48 @@ rm -rf "$SHIM"
 ```
 
 Re-run until it prints "All migrations up to date", then confirm `doctor` shows no FAIL.
+
+## The documented full-rebuild procedure is UNSAFE (verified the hard way, 2026-07-24)
+
+`OneBrain.md` and older notes recommend this to rebuild the index from the vault:
+
+```bash
+rm -rf ~/.gbrain/brain.pglite
+gbrain init --pglite --embedding-model ollama:nomic-embed-text
+gbrain import ~/Obsidian/Hermes
+```
+
+Run on a healthy brain (v0.42.65.0, 428 pages, brain_score 84, orphan_pages 19,
+link_coverage 1.0) it produced a WORSE brain and a total outage:
+
+| Metric | Before | After rebuild |
+|---|---|---|
+| brain_score | 84 | **45** |
+| orphan_pages | 19 | **282** |
+| link_coverage | 1.0 | **0** |
+| every agent's MCP auth | 200 | **401** |
+
+Two independent failures:
+
+1. **It wipes the auth token table.** API tokens live in the database, not in config.
+   A fresh `init` leaves zero tokens, so every wired agent (Claude, Codex, Grok, Warp,
+   Hermes, Cursor, Qoder) gets `invalid_token` / 401 at once. The
+   `GBRAIN_ADMIN_BOOTSTRAP_TOKEN` from `~/.secrets/.env` does NOT authenticate either.
+   Recovery is `gbrain auth create <name>` and then writing the new value over
+   `GBRAIN_REMOTE_TOKEN` in `~/.secrets/.env`, which is the single place every agent
+   resolves it from.
+
+2. **Links do not come back.** After `import`, `extract all`, `extract --stale`,
+   `extract all --catch-up` and a full `sync --repo` pass, link extraction reported
+   `0 links` every time and `link_coverage` stayed at 0. Pages import as "unchanged"
+   so nothing reprocesses. No flag in `extract` forces re-linking.
+
+**Do not run a full rebuild to "refresh" a healthy brain.** The incremental path
+(`sync --repo` plus `extract --stale`, which the 5-minute loop already does) keeps
+link coverage intact. Reserve the rebuild for genuine corruption, and only with:
+
+- a `cp -R` copy of `brain.pglite` taken with serve stopped, and
+- `link_coverage` checked immediately after; if it is 0, restore the copy.
+
+Restoring the copy and reverting `~/.secrets/.env` returned the brain to 84 / 19 / 1.0
+within a minute, which is the only reason this was a non-event.
