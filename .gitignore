@@ -25,3 +25,10 @@ pgdata/
 
 # OS noise
 .DS_Store
+
+# Per-agent local session memory. Machine-specific working notes, not project source.
+# This repo is public: a session memory file here would publish whatever the agent
+# happened to be doing. (Caught 2026-07-25 before the first one was written.)
+.claude/
+.codex/
+.grok/
