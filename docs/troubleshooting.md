@@ -87,7 +87,7 @@ naming a process running `gbrain autopilot --repo <some old vault path>`.
 Cause: `gbrain autopilot --install` writes its own LaunchAgent, `com.gbrain.autopilot`,
 which is NOT part of OneBrain (OneBrain uses the `ai.gbrain.*` prefix). On this machine it
 survived the 2026-06-12 vault move off iCloud and was still pointed at the old
-`~/Library/Mobile Documents/iCloud~md~obsidian/.../Hermes` path, which no longer exists.
+`~/Library/Mobile Documents/iCloud~md~obsidian/.../YourVault` path, which no longer exists.
 With `KeepAlive=true` and `ThrottleInterval=60` it crash-looped every 60 seconds, taking
 the PGLite write lock on each attempt and logging `[cycle.purge] done` against a vault it
 could not see.
@@ -128,7 +128,7 @@ Re-run until it prints "All migrations up to date", then confirm `doctor` shows 
 ```bash
 rm -rf ~/.gbrain/brain.pglite
 gbrain init --pglite --embedding-model ollama:nomic-embed-text
-gbrain import ~/Obsidian/Hermes
+gbrain import ~/Obsidian/YourVault
 ```
 
 Run on a healthy brain (v0.42.65.0, 428 pages, brain_score 84, orphan_pages 19,
@@ -145,7 +145,7 @@ Two independent failures:
 
 1. **It wipes the auth token table.** API tokens live in the database, not in config.
    A fresh `init` leaves zero tokens, so every wired agent (Claude, Codex, Grok, Warp,
-   Hermes, Cursor, Qoder) gets `invalid_token` / 401 at once. The
+   YourVault, Cursor, Qoder) gets `invalid_token` / 401 at once. The
    `GBRAIN_ADMIN_BOOTSTRAP_TOKEN` from `~/.secrets/.env` does NOT authenticate either.
    Recovery is `gbrain auth create <name>` and then writing the new value over
    `GBRAIN_REMOTE_TOKEN` in `~/.secrets/.env`, which is the single place every agent

@@ -18,11 +18,11 @@
 # and never writes to them (forbidden by the agent-isolation rule).
 set -uo pipefail
 
-export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-GBR="$HOME/.gbrain"
+source "$(dirname "$0")/onebrain-common.sh"
+GBR="$GBRAIN_HOME"
 HEARTBEAT="$GBR/heartbeats/lessons.json"
 LOG="$GBR/logs/lessons.log"
-export NOTE="$HOME/Obsidian/Hermes/30 Areas/AI & Systems/Agent Lessons.md"
+export NOTE="${ONEBRAIN_LESSONS_NOTE:-$OBSIDIAN_VAULT_PATH/Agent Lessons.md}"
 MODEL="gemma3:4b"
 MAX_CHARS=24000          # bound the prompt; a 4B model degrades on long input
 LOCK="$GBR/lessons.lock.d"

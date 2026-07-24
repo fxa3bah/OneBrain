@@ -22,7 +22,7 @@ OneBrain is the fix: **one source of truth + one brain layer + many clients.**
   agent points at it in its own config. Ask any one — same answer, same memory.
 - **Passive brain, pluggable orchestrator.** Because the brain just answers, any agent can be
   put *in charge* of it on a schedule (see [`orchestrator.md`](orchestrator.md) — OpenClaw or
-  Hermes/Nous). The orchestrator plans and dispatches; workers write results back to the vault;
+  YourVault/Nous). The orchestrator plans and dispatches; workers write results back to the vault;
   the brain re-indexes. Closed loop.
 
 ## The things that bit me

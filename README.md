@@ -174,7 +174,7 @@ tools/onebrain-agents.sh --wire   # wire the ones that cannot
 tools/onebrain-agents.sh --json   # machine-readable, for a cron or dashboard
 ```
 
-It detects Claude Code, Codex, Grok, Cursor, Qoder, QoderWork, Warp, Hermes, opencode and
+It detects Claude Code, Codex, Grok, Cursor, Qoder, QoderWork, Warp, YourVault, opencode and
 Antigravity, writes each one's native format (JSON `mcpServers` or TOML `[mcp_servers.*]`),
 backs the config up first, and only ever touches the `gbrain` entry. It is idempotent, so it
 is safe on a cron. Agents whose MCP schema it cannot verify are reported as `MANUAL` rather

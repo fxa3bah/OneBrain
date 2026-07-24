@@ -9,18 +9,18 @@
 # handshake. Never bounces ai.gbrain.server; never calls a gbrain write op.
 set -uo pipefail
 
-export PATH="/Users/faadi/.bun/bin:/opt/homebrew/bin:/Users/faadi/.nvm/versions/node/v24.13.0/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+source "$(dirname "$0")/onebrain-common.sh"
 
-MCP_URL="http://127.0.0.1:3131/mcp"
-BASELINE="$HOME/.gbrain/health-baseline.json"
-LOG="$HOME/.gbrain/logs/sentinel.log"
-SYNC_LOG="$HOME/.gbrain/logs/sync.out.log"
-VAULT_NOTE="$HOME/Obsidian/Hermes/System/Brain Health Log.md"
+MCP_URL="http://127.0.0.1:${GBRAIN_PORT}/mcp"
+BASELINE="$GBRAIN_HOME/health-baseline.json"
+LOG="$GBRAIN_HOME/logs/sentinel.log"
+SYNC_LOG="$GBRAIN_HOME/logs/sync.out.log"
+VAULT_NOTE="$OBSIDIAN_VAULT_PATH/System/Brain Health Log.md"
 
 TS="$(date -u +%FT%TZ)"
 log() { echo "$TS $*" >> "$LOG"; }
 
-TOKEN="$(grep '^GBRAIN_REMOTE_TOKEN=' "$HOME/.secrets/.env" 2>/dev/null | cut -d= -f2- | tr -d '\n')"
+TOKEN="$(read_secret GBRAIN_REMOTE_TOKEN)"
 if [ -z "$TOKEN" ]; then
   log "CRITICAL: GBRAIN_REMOTE_TOKEN not found in ~/.secrets/.env — cannot run health check"
   exit 1
@@ -135,7 +135,7 @@ fi
 #
 # The heartbeat must be written on EVERY run, including nights that find zero
 # lessons, so "nothing to learn" and "capture is dead" stay distinguishable.
-HEARTBEAT="$HOME/.gbrain/heartbeats/lessons.json"
+HEARTBEAT="$GBRAIN_HOME/heartbeats/lessons.json"
 if [ ! -f "$HEARTBEAT" ]; then
   ALERTS+=("lessons pipeline has never run (no heartbeat at $HEARTBEAT) — expected until the nightly job ships; this alert is the proof the watchdog works")
 else
@@ -158,7 +158,7 @@ else
   fi
 fi
 
-ALERT_FILE="$HOME/.gbrain/ALERT.json"
+ALERT_FILE="$GBRAIN_HOME/ALERT.json"
 
 if [ "${#ALERTS[@]}" -gt 0 ]; then
   JOINED="$(printf '%s; ' "${ALERTS[@]}")"
@@ -178,20 +178,9 @@ if [ "${#ALERTS[@]}" -gt 0 ]; then
     mv "$ALERT_FILE.new" "$ALERT_FILE"
   fi
 
-  # Push notification — best effort, never fatal.
-  TG_ENV="$HOME/.claude/channels/telegram/.env"
-  if [ -f "$TG_ENV" ]; then
-    TG_TOKEN="$(grep '^TELEGRAM_BOT_TOKEN=' "$TG_ENV" 2>/dev/null | cut -d= -f2- | tr -d '\n\"'"'"'')"
-    TG_CHAT="27899391"
-    if [ -n "$TG_TOKEN" ]; then
-      curl -sS -m 10 -o /dev/null \
-        --data-urlencode "chat_id=$TG_CHAT" \
-        --data-urlencode "text=🧠 $ALERT_MSG" \
-        "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" 2>/dev/null \
-        && log "  notified via Telegram" || log "  Telegram notify failed (non-fatal)"
-    fi
-  fi
-  /usr/bin/osascript -e "display notification \"${JOINED%; }\" with title \"gbrain sentinel\"" 2>/dev/null || true
+  # Push notification via the shared notifier (Telegram / macOS / log).
+  # Best effort, never fatal, and NO recipient is hardcoded — see onebrain-notify.sh.
+  "$(dirname "$0")/onebrain-notify.sh" "${JOINED%; }" "gbrain sentinel" 2>/dev/null || true
 
   # Baseline is NOT overwritten with the regressed numbers. It becomes a
   # best-known-good high-water mark, so a regression keeps alerting until it is

@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/faadi/.gbrain/bin/gbrain-sentinel.sh</string>
+        <string>__HOME__/.gbrain/bin/gbrain-sentinel.sh</string>
     </array>
 
     <key>StartCalendarInterval</key>
@@ -23,10 +23,10 @@
     <false/>
 
     <key>StandardOutPath</key>
-    <string>/Users/faadi/.gbrain/logs/sentinel.out.log</string>
+    <string>__HOME__/.gbrain/logs/sentinel.out.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/faadi/.gbrain/logs/sentinel.err.log</string>
+    <string>__HOME__/.gbrain/logs/sentinel.err.log</string>
 
     <key>ProcessType</key>
     <string>Background</string>

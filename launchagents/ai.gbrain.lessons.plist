@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/faadi/.gbrain/bin/gbrain-lessons.sh</string>
+        <string>__HOME__/.gbrain/bin/gbrain-lessons.sh</string>
     </array>
 
     <!-- 03:05, ahead of enrichment at 03:17 and the doctor at 07:40, so the
@@ -25,10 +25,10 @@
     <false/>
 
     <key>StandardOutPath</key>
-    <string>/Users/faadi/.gbrain/logs/lessons.out.log</string>
+    <string>__HOME__/.gbrain/logs/lessons.out.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/faadi/.gbrain/logs/lessons.err.log</string>
+    <string>__HOME__/.gbrain/logs/lessons.err.log</string>
 
     <key>ProcessType</key>
     <string>Background</string>

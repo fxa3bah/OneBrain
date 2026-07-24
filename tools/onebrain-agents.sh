@@ -5,7 +5,7 @@
 # actually reach the shared brain, and wires the ones that cannot.
 #
 # Why this exists: on 2026-07-24 an audit found OneBrain.md claiming
-# "Claude · Codex · Grok · Hermes (all wired)" while Claude Code had zero MCP
+# "Claude · Codex · Grok · YourVault (all wired)" while Claude Code had zero MCP
 # servers configured and no occurrence of "gbrain" anywhere in its config. Nine
 # of twelve installed agents could not reach the brain their instruction files
 # told them was the source of truth. Config claims drifted from reality because
@@ -103,7 +103,7 @@ detect() {
   #   agy/gemini, opencode — no verified MCP schema on this machine; wiring blind risks
   #                          corrupting a working config, which is exactly the failure
   #                          the isolation rule was written after.
-  have hermes   && record "hermes"   yes "~/.hermes/config.yaml" yes "wired (managed by Hermes, not touched)"
+  have hermes   && record "hermes"   yes "~/.hermes/config.yaml" yes "wired (managed by YourVault, not touched)"
   have agy      && record "agy"      yes "~/.gemini/" no "MANUAL — MCP schema unverified"
   have opencode && record "opencode" yes "~/.config/opencode/opencode.jsonc" no "MANUAL — MCP schema unverified"
 }

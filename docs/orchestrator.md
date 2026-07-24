@@ -71,11 +71,11 @@ and writes outcomes back to the vault.
 
 ## Option B — Hermes (Nous Research)
 
-[Hermes](https://hermes-agent.nousresearch.com/docs/) is an autonomous, self-improving agent
+[YourVault](https://hermes-agent.nousresearch.com/docs/) is an autonomous, self-improving agent
 that connects to any MCP server, has **built-in cron with delivery to any platform**, and can
 **spawn isolated subagents for parallel workstreams** — a natural always-on orchestrator.
 
-Add OneBrain under `mcp_servers` in Hermes's config:
+Add OneBrain under `mcp_servers` in YourVault's config:
 
 ```yaml
 mcp_servers:
@@ -95,7 +95,7 @@ Reload without restarting:
 /reload-mcp
 ```
 
-Then drive it with Hermes's built-in cron, e.g.:
+Then drive it with YourVault's built-in cron, e.g.:
 
 ```yaml
 cron:
@@ -119,5 +119,5 @@ with one memory.
 
 ## You don't have to dedicate a runtime
 Any worker agent (e.g. Claude Code) can take the orchestrator role for a single session by
-being handed the coordinating prompt and allowed to call the others. OpenClaw or Hermes just
+being handed the coordinating prompt and allowed to call the others. OpenClaw or YourVault just
 make it **persistent and scheduled** instead of on-demand.
