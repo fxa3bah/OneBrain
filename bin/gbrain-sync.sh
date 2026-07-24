@@ -58,9 +58,13 @@ rc=$?
 # enrichment runs — a window of up to 24h. That gap is exactly what produced the
 # 2026-07-24 incident: 67 Bank SMS notes written at 04:13 showed as orphans at 04:40,
 # spiking orphan_pages 30 -> 113, because extraction had not run since.
-# Offline, zero LLM calls, and --stale means it is a no-op when nothing is pending.
-# serve is still down here, so the PGLite write lock is free.
-env -u OPENAI_API_KEY bun run "$CLI" extract --stale 2>&1 | tail -2
+# Use `extract all`, NOT `extract --stale`. --stale looks at page staleness, which sync has
+# already cleared, so it reports "No stale pages" and creates zero links for notes that were
+# just added or newly linked — verified twice: the Bank SMS batch, and again on 2026-07-24
+# when four new notes linked from their MOCs still showed zero backlinks after a --stale pass.
+# `extract all` is idempotent and costs ~1.4s across 445 pages, so there is no reason to narrow it.
+# Offline, zero LLM calls. serve is still down here, so the PGLite write lock is free.
+env -u OPENAI_API_KEY bun run "$CLI" extract all 2>&1 | tail -2
 
 # Always bring serve back, even if sync failed.
 launchctl bootstrap "gui/$UID_N" "$SERVE_PLIST" 2>/dev/null
