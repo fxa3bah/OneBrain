@@ -75,4 +75,28 @@
   <div style="background:#0f172a;color:#94a3b8;font-size:12px;padding:14px 40px">OneBrain &#183; Obsidian + gbrain + local Ollama, unified over MCP &#183; built 2026-06-12 &#183; 100% on-device</div>
 
 </div>
+
+<section style="max-width:820px;margin:2rem auto;padding:1.25rem 1.5rem;border:1px solid #d9dde3;border-radius:10px;background:#fbfcfd;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.55;color:#1f2933">
+  <h2 style="margin:0 0 .5rem;font-size:1.05rem;letter-spacing:.01em">Self-improvement loop</h2>
+  <p style="margin:.35rem 0 .9rem;color:#52606d;font-size:.93rem">
+    Agents assert things that turn out false &mdash; usually verification failures, not reasoning
+    failures. Those corrections are captured nightly and shared across every agent.
+  </p>
+  <pre style="margin:0 0 .9rem;padding:.85rem 1rem;background:#0f172a;color:#e2e8f0;border-radius:8px;overflow-x:auto;font-size:.8rem;line-height:1.5">agent transcripts (read-only)
+        &darr;  nightly 03:05, local model, $0
+   contradicted claims
+        &darr;
+   Agent Lessons note  (in the vault, survives a brain rebuild)
+        &darr;  Rules injected at every session start
+   every agent
+        &darr;  heartbeat written on EVERY run
+   ai.gbrain.doctor &rarr; Telegram &middot; macOS &middot; log</pre>
+  <p style="margin:0;color:#52606d;font-size:.9rem">
+    <strong>The watchdog ships before the pipeline.</strong> It alerts when the heartbeat is
+    missing, stale, errored, or reports zero sessions scanned while transcripts were changing &mdash;
+    the signature of a job that exits clean while observing nothing. It starts alarmed and can only
+    go green once the pipeline genuinely runs. A monitored system that starts alarmed cannot ship dead.
+  </p>
+</section>
+
 </body></html>

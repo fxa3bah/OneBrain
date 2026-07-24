@@ -48,6 +48,13 @@ apart, and there's no single place to ask. Classic agent amnesia, times four.
                   ▼
    Claude Code · Codex · Grok · Cursor · Qoder · Warp · your gateway/bot · Claude Desktop
                   └────────── all query the SAME brain ──────────┘
+                  ▲                                              │
+                  │  Rules injected at session start             │ transcripts (read-only)
+                  │                                              ▼
+        Agent Lessons note  ◀────── nightly: local model finds contradicted claims
+                  ▲
+                  │  heartbeat every run, even on zero-lesson nights
+        ai.gbrain.doctor ──▶ notify: Telegram · macOS · log
 ```
 
 - **Source of truth:** your Obsidian vault. Plain Markdown. Agents read it and write
@@ -78,7 +85,7 @@ orchestrator makes the loop persistent and scheduled.
 ## What's in this repo
 
 ```
-bin/                    wrapper scripts (serve, sync, enrichment, sentinel, env, desktop bridge)
+bin/                    wrapper scripts (serve, sync, enrichment, sentinel, lessons, notify, env, bridge)
 launchagents/           macOS LaunchAgents (auto-start, survive reboot)
 tools/onebrain-agents.sh  detect installed agents and wire them to the brain
 config/eval-queries.txt   probe set for the nightly contradiction check
@@ -155,6 +162,9 @@ Then wire your agents — [`docs/clients.md`](docs/clients.md).
 - **Reversible** — your vault is plain Markdown under git; the gbrain DB is a rebuildable index.
 - **Verified, not assumed** — a daily sentinel that refuses to absorb its own regressions, an
   off-machine vault backup on every commit, and a wiring report that checks config against reality.
+- **Learns from being wrong** — nightly local extraction of contradicted claims into one
+  vault note whose Rules every agent reads at session start, watched by a heartbeat that
+  cannot fail silently.
 
 ## Wiring agents (and checking they are actually wired)
 
@@ -206,6 +216,42 @@ So the wrapper ships three checks:
 
 If you take one thing from this repo, take the sentinel pattern. A detector that heals its
 own alarm is worse than no detector, because it looks like everything is fine.
+
+## Lessons: the agents learn from being wrong
+
+Agents assert things that turn out false. Usually not reasoning failures — verification
+failures: asserting without checking, or checking partially and reporting as if fully.
+Those corrections are worth keeping, and they are worth sharing across every agent.
+
+- **`bin/gbrain-lessons.sh`** (`ai.gbrain.lessons`, nightly 03:05) scans the last 24h of
+  agent transcripts **read-only**, asks a local model (`gemma3:4b` via Ollama) to find
+  claims that were later contradicted, and appends them to one vault note. Fully offline,
+  no per-run cost.
+- **The vault note** holds two sections: **Rules** (hard-capped, binding, injected at every
+  session start) and an append-only **Log** they were distilled from. It lives in the vault,
+  so every agent reads the same rules and a brain rebuild cannot destroy them.
+- **`bin/onebrain-notify.sh`** is the one place that knows how to reach a human: Telegram,
+  macOS notification, and a log file. Each channel is optional and no-ops silently when
+  unconfigured. gbrain has no notification layer of its own, so this belongs to the wrapper.
+  Configure in `~/.onebrain/notify.env` — see `.env.example`.
+
+**Why this one is watched harder than anything else here.** The previous attempt at this
+captured nothing for three months. Its observation hooks were registered in a plugin that
+was not installed, so they never fired, and nothing reported the silence. It looked healthy
+the entire time.
+
+So the watchdog was built **before** the pipeline it watches. `ai.gbrain.doctor` alerts when
+the lessons heartbeat is missing, older than 48h, reports an error, **or reports zero
+sessions scanned while transcripts were changing** — the signature of a job that exits clean
+while observing nothing. It ships alarmed and can only go green once the pipeline genuinely
+runs and writes a heartbeat.
+
+That ordering is the point: **a monitored system that starts in the alarmed state cannot
+ship dead.** The heartbeat is written on every exit path including zero-lesson nights, so
+"nothing to learn" and "capture is dead" stay distinguishable.
+
+One consequence worth internalising: a quiet night and a broken extractor produce identical
+output. Test the extractor with a planted contradiction before trusting a zero.
 
 ## Choosing a local chat model
 
