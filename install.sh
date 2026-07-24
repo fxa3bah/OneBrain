@@ -30,6 +30,17 @@ cp "$REPO_DIR"/bin/*.sh "$BIN_DIR"/
 chmod +x "$BIN_DIR"/*.sh
 echo "[ok] wrapper scripts installed"
 
+# Run setup first unless the caller opts out. It verifies every value rather than
+# collecting it — a config that exists and a config that works are different states,
+# and shipping people the second one is the whole point.
+if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
+  "$REPO_DIR/scripts/onebrain-setup.sh" || {
+    echo "[!!] setup incomplete — fix the items above, then re-run ./install.sh"
+    echo "     (bypass with SKIP_SETUP=1 ./install.sh)"
+    exit 1
+  }
+fi
+
 # Default enrichment tier = 1 (offline housekeeping only). Bump to 2/3 yourself later.
 [ -f "$GBRAIN_HOME/ENRICHMENT_TIER" ] || echo "1" > "$GBRAIN_HOME/ENRICHMENT_TIER"
 

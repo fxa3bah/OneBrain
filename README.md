@@ -93,7 +93,8 @@ docs/clients.md         how to wire Claude / Codex / Grok / a gateway / Claude D
 docs/orchestrator.md    put an agent in charge: OpenClaw / Hermes (Nous) integration
 docs/troubleshooting.md every lesson that bit during the build
 docs/architecture.html  the architecture infographic
-install.sh              one-command install (idempotent)
+scripts/onebrain-setup.sh  interactive setup; verifies every value it collects
+install.sh              one-command install (runs setup, then loads services)
 uninstall.sh            clean removal (leaves your vault + secrets + DB intact)
 .env.example            secrets template, copy to ~/.secrets/.env
 ```
@@ -132,15 +133,32 @@ cd ~/Code/gbrain && git checkout <the-commit-you-tested> && bun install
 ## Install
 
 ```bash
-# 1. secrets
-cp .env.example ~/.secrets/.env && chmod 600 ~/.secrets/.env
-$EDITOR ~/.secrets/.env          # set tokens + OBSIDIAN_VAULT_PATH + GBRAIN_REPO
+./install.sh          # add --enrichment for the nightly sandboxed self-tidy
+```
 
-# 2. one-time index of your vault (serve must be stopped; PGLite single-writer)
-cd ~/Code/gbrain && env -u OPENAI_API_KEY bun run src/cli.ts sync --repo "$OBSIDIAN_VAULT_PATH"
+That's it. `install.sh` runs `scripts/onebrain-setup.sh` first, which walks you
+through five steps and **verifies each answer instead of just collecting it**:
 
-# 3. install services (add --enrichment for the nightly sandboxed self-tidy)
-./install.sh
+| Step | What it proves |
+|---|---|
+| Vault | the directory exists **and** is a git repo — the 5-min sync loop needs git to see changes (offers to `git init`) |
+| gbrain | `src/cli.ts` is really there, with the clone command if not |
+| Tokens | generated with `openssl rand`, not typed — no reason to make a human invent random strings |
+| Ollama | reachable **and** `nomic-embed-text` pulled (offers to pull it) |
+| Alerts | optional Telegram — tells you to get a token from `@BotFather` and your chat ID from `@userinfobot`, then **sends a real test message and asks you to confirm you received it** |
+
+That last step is the point. A token that is *present* and a token that *works* are
+different states, and shipping people the second one is the whole job. Setup is
+idempotent — re-run it any time; anything already correct is left untouched.
+
+Non-interactive (CI, no TTY) it reports what's missing and exits 1 rather than
+prompting. `SKIP_SETUP=1 ./install.sh` bypasses it entirely.
+
+Then index your vault once and wire your agents:
+
+```bash
+cd "$GBRAIN_REPO" && env -u OPENAI_API_KEY bun run src/cli.ts sync --repo "$OBSIDIAN_VAULT_PATH"
+tools/onebrain-agents.sh --wire
 ```
 
 Verify:
