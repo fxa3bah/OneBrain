@@ -43,7 +43,7 @@ run embed --stale 2>&1 | tail -2
 # Contradiction probe. This was previously invoked bare and failed EVERY night
 # with "Must pass exactly one of: --queries-file FILE, --query ..., --from-capture"
 # — so contradiction detection had never once run. It needs a probe set:
-# ~/.gbrain/eval-queries.txt holds questions about Fahd's actual world (which
+# ~/.gbrain/eval-queries.txt holds questions about your actual world (which
 # machine is primary, where secrets live, which model is allowed on the API...),
 # i.e. exactly the facts that go stale and cause wrong answers.
 QUERIES="$GBR/eval-queries.txt"

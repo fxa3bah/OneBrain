@@ -19,7 +19,7 @@
 # Safety: never writes without --wire; always backs up a config before editing;
 # only ever touches the gbrain entry, never another server's config. Editing
 # another agent's config is normally forbidden by the agent-isolation rule —
-# OneBrain memory wiring is Fahd's explicit, and only, exclusion to that rule.
+# OneBrain memory wiring is the one explicit exclusion to that rule.
 set -uo pipefail
 
 URL="http://127.0.0.1:3131/mcp"
