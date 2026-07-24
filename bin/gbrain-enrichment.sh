@@ -1,15 +1,17 @@
 #!/bin/bash
-# OneBrain enrichment — SANDBOXED, self-disabling, PGLite-safe.
-# Only ever touches $GBRAIN_HOME, the vault, and its OWN launchd label.
-# Never calls launchctl on any other service (learned the hard way: a self-restart
-# loop once took down a separate messaging gateway).
+# OneBrain enrichment — SANDBOXED, self-disabling, PGLite-safe, isolated from the Hermes gateway.
+# Only ever touches ~/.gbrain, the vault, and its OWN launchd label. Never calls launchctl on the gateway.
 set -uo pipefail
-source "$(dirname "$0")/onebrain-common.sh"
+export PATH="/Users/faadi/.bun/bin:/opt/homebrew/bin:/Users/faadi/.nvm/versions/node/v24.13.0/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-SENTINEL="$GBRAIN_HOME/ENRICHMENT_DISABLED"
-STARTS="$GBRAIN_HOME/enrichment-starts.log"
-TIERF="$GBRAIN_HOME/ENRICHMENT_TIER"
-LOCK="$GBRAIN_HOME/enrichment.lock.d"
+GBR="/Users/faadi/.gbrain"
+CLI="/Users/faadi/Code/gbrain/src/cli.ts"
+UID_N="$(id -u)"
+SENTINEL="$GBR/ENRICHMENT_DISABLED"
+STARTS="$GBR/enrichment-starts.log"
+TIERF="$GBR/ENRICHMENT_TIER"
+LOCK="$GBR/enrichment.lock.d"
+SERVE_PLIST="/Users/faadi/Library/LaunchAgents/ai.gbrain.server.plist"
 
 # --- KILL SWITCH ---
 if [ -f "$SENTINEL" ]; then echo "$(date -u +%FT%TZ) enrichment DISABLED (sentinel present)"; exit 0; fi
@@ -28,21 +30,33 @@ if ! mkdir "$LOCK" 2>/dev/null; then echo "$(date -u +%FT%TZ) enrichment already
 trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
 TIER="$(cat "$TIERF" 2>/dev/null || echo 1)"
-run(){ env -u OPENAI_API_KEY bun run "$GBRAIN_CLI" "$@"; }
+run(){ env -u OPENAI_API_KEY -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN bun run "$CLI" "$@"; }
 
 echo "=== enrichment START tier=$TIER @ $(date -u +%FT%TZ) ==="
 # Release the PGLite write lock held by serve
 launchctl bootout "gui/$UID_N/ai.gbrain.server" 2>/dev/null
-for i in 1 2 3 4 5; do sleep 1; lsof -nP -iTCP:"$GBRAIN_PORT" -sTCP:LISTEN 2>/dev/null | grep -q LISTEN || break; done
+for i in 1 2 3 4 5; do sleep 1; lsof -nP -iTCP:3131 -sTCP:LISTEN 2>/dev/null | grep -q LISTEN || break; done
 
 # TIER 1 — housekeeping, 100% offline (extract = typed edges, zero LLM calls)
 run extract all   2>&1 | tail -3
 run embed --stale 2>&1 | tail -2
+# Contradiction probe. This was previously invoked bare and failed EVERY night
+# with "Must pass exactly one of: --queries-file FILE, --query ..., --from-capture"
+# — so contradiction detection had never once run. It needs a probe set:
+# ~/.gbrain/eval-queries.txt holds questions about Fahd's actual world (which
+# machine is primary, where secrets live, which model is allowed on the API...),
+# i.e. exactly the facts that go stale and cause wrong answers.
+QUERIES="$GBR/eval-queries.txt"
+if [ -f "$QUERIES" ]; then
+  run eval suspected-contradictions --queries-file "$QUERIES" --budget-usd 0 --yes 2>&1 | tail -6
+else
+  echo "WARN: $QUERIES missing — contradiction probe skipped (create it to re-enable)"
+fi
 
-# TIER 2 — preview the synthesis cycle (dry-run, no writes) once tier>=2
+# TIER 2 — preview the dream cycle (dry-run, no writes) once tier>=2
 if [ "$TIER" -ge 2 ]; then run dream --dry-run 2>&1 | tail -6; fi
 
-# TIER 3 — full synthesis cycle (REQUIRES a local Ollama chat model; writes to 60 Synthesis/)
+# TIER 3 — full dream cycle (REQUIRES a local Ollama chat_model; writes synthesis to 60 Synthesis/)
 if [ "$TIER" -ge 3 ]; then run dream 2>&1 | tail -10; fi
 
 run doctor --fast 2>&1 | grep -iE "health|\[ok\]|\[warn\]|\[fail\]" | tail -4

@@ -1,7 +1,3 @@
 #!/bin/bash
-# OneBrain — register the client bearer token into the GUI launchd session at login,
-# so CLI agents launched from the GUI (e.g. Codex, a desktop app) inherit it even
-# when they don't start from an interactive shell that sourced ~/.zshenv.
-source "$(dirname "$0")/onebrain-common.sh"
-TOK="$(read_secret GBRAIN_REMOTE_TOKEN)"
+TOK="$(grep '^GBRAIN_REMOTE_TOKEN=' "$HOME/.secrets/.env" 2>/dev/null | cut -d= -f2- | tr -d '\n' | tr -d '"' | tr -d "'")"
 [ -n "$TOK" ] && /bin/launchctl setenv GBRAIN_REMOTE_TOKEN "$TOK"

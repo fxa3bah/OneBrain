@@ -1,0 +1,22 @@
+Which machine is Fahd's primary and which agents run on it?
+What is the hostname and current IP of the Windows work laptop?
+Does the Windows work laptop have AI software installed?
+Where does the Obsidian vault live and is it on iCloud?
+Which embedding model does gbrain use and is it local or cloud?
+Which chat model is gbrain configured to use?
+Where do operational secrets live and which ones are still unrotated?
+Which email address should briefings and reports be sent to?
+Which sender address does Fahd use for outbound agent email?
+What is Fahd's role and which business units does he own?
+Who are the members of the Texpert Telegram group and what are their roles?
+Which model does the Texpert bot run on and what are its fallbacks?
+What is the VPS host and what runs on it?
+Which Cloudflare account owns the hermes and texpert tunnels?
+What is the canonical design system file and how is it propagated?
+Which agents are wired to the gbrain MCP endpoint?
+What is the agent isolation rule and what is excluded from it?
+Which model tier should be used for gathering versus reasoning?
+Which model is allowed for raw Anthropic API calls?
+What is the backup arrangement for the Obsidian vault?
+Which customer is the largest international account?
+Where is the 2026 weekly forecast tracker and which tabs matter?

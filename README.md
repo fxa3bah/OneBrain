@@ -46,7 +46,7 @@ apart, and there's no single place to ask. Classic agent amnesia, times four.
    gbrain  (PGLite index + nomic-embed via Ollama + knowledge graph + synthesis)
                   │   one HTTP MCP server · 127.0.0.1 · bearer-token auth
                   ▼
-   Claude Code · Codex · Grok · your gateway/bot · Claude Desktop
+   Claude Code · Codex · Grok · Cursor · Qoder · Warp · your gateway/bot · Claude Desktop
                   └────────── all query the SAME brain ──────────┘
 ```
 
@@ -78,15 +78,17 @@ orchestrator makes the loop persistent and scheduled.
 ## What's in this repo
 
 ```
-bin/                    wrapper scripts (serve, sync, enrichment, env, desktop bridge)
+bin/                    wrapper scripts (serve, sync, enrichment, sentinel, env, desktop bridge)
 launchagents/           macOS LaunchAgents (auto-start, survive reboot)
+tools/onebrain-agents.sh  detect installed agents and wire them to the brain
+config/eval-queries.txt   probe set for the nightly contradiction check
 docs/clients.md         how to wire Claude / Codex / Grok / a gateway / Claude Desktop
 docs/orchestrator.md    put an agent in charge: OpenClaw / Hermes (Nous) integration
 docs/troubleshooting.md every lesson that bit during the build
 docs/architecture.html  the architecture infographic
 install.sh              one-command install (idempotent)
 uninstall.sh            clean removal (leaves your vault + secrets + DB intact)
-.env.example            secrets template — copy to ~/.secrets/.env
+.env.example            secrets template, copy to ~/.secrets/.env
 ```
 
 Nothing here contains a secret. The scripts read tokens from `~/.secrets/.env` at runtime.
@@ -109,8 +111,16 @@ git clone https://github.com/garrytan/gbrain ~/Code/gbrain
 cd ~/Code/gbrain && git checkout <the-commit-you-tested> && bun install
 ```
 
-> This setup was built and tested against gbrain **v0.42.42.0**. Treat the pin as a gate:
+> This setup was built and tested against gbrain **v0.42.65.0**. Treat the pin as a gate:
 > re-test the sync/serve/enrichment loop before upgrading.
+>
+> Upgrade procedure that worked (2026-07-24, v0.42.42.0 to v0.42.65.0, 369 commits):
+> stop `ai.gbrain.server` so the PGLite lock is free, copy `brain.pglite` aside, rebase any
+> local patches onto upstream, `bun install`, `bun run src/cli.ts apply-migrations --yes`,
+> `jobs smoke`, restart serve, then compare `get_health` against the pre-upgrade numbers.
+> Note that `apply-migrations` runs its smoke phase by shelling out to a `gbrain` binary on
+> PATH; if you deliberately have no such binary, that phase fails while the migrations
+> themselves have already applied. Run `bun run src/cli.ts jobs smoke` yourself to confirm.
 
 ## Install
 
@@ -143,6 +153,74 @@ Then wire your agents — [`docs/clients.md`](docs/clients.md).
 - **Safe by construction** — secrets evicted from the vault, loopback + bearer auth,
   PGLite-safe sync, and a sandboxed enrichment daemon with a kill-switch + watchdog.
 - **Reversible** — your vault is plain Markdown under git; the gbrain DB is a rebuildable index.
+- **Verified, not assumed** — a daily sentinel that refuses to absorb its own regressions, an
+  off-machine vault backup on every commit, and a wiring report that checks config against reality.
+
+## Wiring agents (and checking they are actually wired)
+
+```bash
+tools/onebrain-agents.sh          # report which installed agents can reach the brain
+tools/onebrain-agents.sh --wire   # wire the ones that cannot
+tools/onebrain-agents.sh --json   # machine-readable, for a cron or dashboard
+```
+
+It detects Claude Code, Codex, Grok, Cursor, Qoder, QoderWork, Warp, Hermes, opencode and
+Antigravity, writes each one's native format (JSON `mcpServers` or TOML `[mcp_servers.*]`),
+backs the config up first, and only ever touches the `gbrain` entry. It is idempotent, so it
+is safe on a cron. Agents whose MCP schema it cannot verify are reported as `MANUAL` rather
+than written to blindly.
+
+**Why this exists.** An audit on 2026-07-24 found this project's own architecture diagram
+claiming four agents were wired while the busiest one, Claude Code, had zero MCP servers
+configured and no occurrence of the string `gbrain` anywhere in its config. Nine of twelve
+installed agents could not reach the brain their own instruction files named as the source of
+truth. Documentation drifted from reality because nothing compared the two. Run the report,
+do not trust the diagram.
+
+## Verification: the part that actually keeps this honest
+
+A memory system fails quietly. Nothing errors, answers just get subtly wrong. Every real
+fault found in this stack was silent:
+
+| Fault | How it presented |
+|---|---|
+| Claude Code never wired to MCP | Its instructions said "check the brain first". It had no tools to do so. |
+| Vault had no off-machine copy | Git dir sat on the same disk, zero remotes, no Time Machine destination. |
+| Backup repo on the second machine | Created once, one commit, never pushed again for six weeks. |
+| Nightly contradiction check | Invoked with no arguments, failed on a usage error every single night. |
+| Knowledge-health regression | Alerted once to a logfile nobody reads, then the rolling baseline absorbed it. |
+| Configured chat model | Named a model that was not installed; and when installed, thrashed at 0.8 tok/s. |
+
+So the wrapper ships three checks:
+
+- **`bin/gbrain-sentinel.sh`** (`ai.gbrain.doctor`, daily): queries the running server over
+  MCP, compares against `~/.gbrain/health-baseline.json`, and on regression writes
+  `~/.gbrain/ALERT.json`, sends a push notification, and **holds the baseline at the last
+  known-good values** so the regression keeps alerting until it is genuinely fixed. Only a
+  clean run advances the baseline. Delete the baseline file to accept new numbers on purpose.
+- **Off-machine backup** inside `bin/gbrain-sync.sh`: mirrors the vault git to a second
+  machine on every changed commit, connection-bounded and non-fatal so an unreachable target
+  can never stall or fail brain sync.
+- **`config/eval-queries.txt`**: questions about facts that actually go stale in your world,
+  fed to `gbrain eval suspected-contradictions` nightly. Runs fully local at $0.
+
+If you take one thing from this repo, take the sentinel pattern. A detector that heals its
+own alarm is worse than no detector, because it looks like everything is fine.
+
+## Choosing a local chat model
+
+`chat_model` is only needed for the synthesis and dream tiers, not for search or embeddings.
+Size it to the machine, and measure rather than trusting `ollama ps`, which reports
+"100% GPU" even while the model is thrashing through swap.
+
+Measured on a Mac mini M4 / 16GB:
+
+| Model | Generation | Verdict |
+|---|---|---|
+| `gemma4:12b-mlx` (7.7GB) | **0.8 tok/s**, swap at 12.9GB of 14.3GB | Unusable. MLX builds thrash once resident size approaches the wired limit. |
+| `gemma3:4b` (3.3GB) | **31.8 tok/s** | Fits comfortably, 40x faster. |
+
+The larger model is not the better model when it does not fit.
 
 ## Multi-machine
 

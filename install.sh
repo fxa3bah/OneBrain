@@ -35,9 +35,16 @@ echo "[ok] wrapper scripts installed"
 
 # --- LaunchAgents (substitute __HOME__; launchd can't expand env vars) ---
 mkdir -p "$LAUNCH_DIR"
-AGENTS=(ai.gbrain.server ai.gbrain.sync ai.gbrain.env)
+# ai.gbrain.doctor is the knowledge-health sentinel. It is NOT optional: it is the
+# only thing that notices when the brain silently degrades, and every real fault in
+# this stack has been silent. It is read-only and cheap (one MCP call per day).
+AGENTS=(ai.gbrain.server ai.gbrain.sync ai.gbrain.env ai.gbrain.doctor)
 # enrichment is optional/heavier — install it only with --enrichment
 if [[ "${1:-}" == "--enrichment" ]]; then AGENTS+=(ai.gbrain.enrichment); fi
+
+# Probe set for the nightly contradiction check. Ships with a generic starter; edit it
+# to ask about facts that actually go stale in YOUR world.
+[ -f "$GBRAIN_HOME/eval-queries.txt" ] || cp "$REPO_DIR/config/eval-queries.txt" "$GBRAIN_HOME/eval-queries.txt" 2>/dev/null || true
 
 for a in "${AGENTS[@]}"; do
   sed "s#__HOME__#$HOME#g" "$REPO_DIR/launchagents/$a.plist" > "$LAUNCH_DIR/$a.plist"
