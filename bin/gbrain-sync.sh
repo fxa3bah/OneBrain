@@ -53,6 +53,15 @@ for i in 1 2 3 4 5; do sleep 1; lsof -nP -iTCP:3131 -sTCP:LISTEN 2>/dev/null | g
 env -u OPENAI_API_KEY bun run "$CLI" sync --repo "$VAULT" --no-pull --skip-failed
 rc=$?
 
+# Extract typed edges for anything newly synced. Without this, sync indexes a note's
+# CONTENT but not its LINKS, so a new note stays an orphan until the nightly 03:17
+# enrichment runs — a window of up to 24h. That gap is exactly what produced the
+# 2026-07-24 incident: 67 Bank SMS notes written at 04:13 showed as orphans at 04:40,
+# spiking orphan_pages 30 -> 113, because extraction had not run since.
+# Offline, zero LLM calls, and --stale means it is a no-op when nothing is pending.
+# serve is still down here, so the PGLite write lock is free.
+env -u OPENAI_API_KEY bun run "$CLI" extract --stale 2>&1 | tail -2
+
 # Always bring serve back, even if sync failed.
 launchctl bootstrap "gui/$UID_N" "$SERVE_PLIST" 2>/dev/null
 
