@@ -57,8 +57,18 @@ elif [ -n "$TG_TOKEN" ]; then
 fi
 
 # --- macOS notification ---
+# Pass the text through argv, NOT string interpolation. Interpolating into
+# `osascript -e "... \"$MSG\" ..."` lets any double quote in the message break out
+# of the AppleScript string literal and inject script — verified: a message
+# containing `" with title "X" default answer "` produces a syntax error, and a
+# crafted one would execute. Alert text originates from gbrain output, so it is
+# not attacker-controlled today, but argv costs nothing and closes the class.
 if [ "$(uname)" = "Darwin" ]; then
-  /usr/bin/osascript -e "display notification \"$MSG\" with title \"$SUBJECT\"" 2>/dev/null || true
+  /usr/bin/osascript - "$MSG" "$SUBJECT" <<'APPLESCRIPT' 2>/dev/null || true
+on run argv
+  display notification (item 1 of argv) with title (item 2 of argv)
+end run
+APPLESCRIPT
 fi
 
 exit 0
