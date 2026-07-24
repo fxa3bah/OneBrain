@@ -121,6 +121,43 @@ if [ "$SYNC_STALE" -eq 1 ]; then
   ALERTS+=("sync freshness: $SYNC_DETAIL")
 fi
 
+# --- lessons-pipeline watchdog -------------------------------------------------
+# This check exists BEFORE the pipeline it watches. That ordering is the point.
+#
+# continuous-learning-v2 captured nothing for three months because its hooks were
+# registered in an uninstalled plugin, so they never fired — and silence looked
+# exactly like health. Nothing ever said "I am not working."
+#
+# So: this check ships first and alerts immediately against a heartbeat that does
+# not exist yet. A monitored system that starts in the ALARMED state cannot ship
+# dead. The alert clears only when the nightly job genuinely runs and writes its
+# heartbeat — which is the only proof that matters.
+#
+# The heartbeat must be written on EVERY run, including nights that find zero
+# lessons, so "nothing to learn" and "capture is dead" stay distinguishable.
+HEARTBEAT="$HOME/.gbrain/heartbeats/lessons.json"
+if [ ! -f "$HEARTBEAT" ]; then
+  ALERTS+=("lessons pipeline has never run (no heartbeat at $HEARTBEAT) — expected until the nightly job ships; this alert is the proof the watchdog works")
+else
+  HB_AGE_H=$(( ( $(date -u +%s) - $(stat -f %m "$HEARTBEAT") ) / 3600 ))
+  HB_STATUS="$(jq -r '.status // "unknown"' "$HEARTBEAT" 2>/dev/null)"
+  HB_SESSIONS="$(jq -r '.sessions_scanned // -1' "$HEARTBEAT" 2>/dev/null)"
+
+  if [ "$HB_AGE_H" -gt 48 ]; then
+    ALERTS+=("lessons pipeline stale: last heartbeat ${HB_AGE_H}h ago (expected within 48h)")
+  elif [ "$HB_STATUS" != "ok" ]; then
+    ALERTS+=("lessons pipeline last run reported status=$HB_STATUS")
+  else
+    # v2's exact failure signature: the job "succeeds" while observing nothing.
+    # If transcripts changed in the last 24h but the scan saw zero sessions, the
+    # capture path is broken even though the job exited clean.
+    RECENT_TRANSCRIPTS=$(find "$HOME/.claude/projects" -name '*.jsonl' -mtime -1 2>/dev/null | head -5 | wc -l | tr -d ' ')
+    if [ "$HB_SESSIONS" = "0" ] && [ "${RECENT_TRANSCRIPTS:-0}" -gt 0 ]; then
+      ALERTS+=("lessons pipeline scanned 0 sessions while $RECENT_TRANSCRIPTS+ transcripts changed in 24h — capture path is broken (this is exactly how continuous-learning-v2 died)")
+    fi
+  fi
+fi
+
 ALERT_FILE="$HOME/.gbrain/ALERT.json"
 
 if [ "${#ALERTS[@]}" -gt 0 ]; then
