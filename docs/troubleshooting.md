@@ -165,3 +165,37 @@ link coverage intact. Reserve the rebuild for genuine corruption, and only with:
 
 Restoring the copy and reverting `~/.secrets/.env` returned the brain to 84 / 19 / 1.0
 within a minute, which is the only reason this was a non-event.
+
+### ROOT CAUSE FOUND: `link_resolution.global_basename` defaults to false
+
+Reproduced in an isolated sandbox (`GBRAIN_HOME=/tmp/gbrain-sandbox`, live brain untouched):
+a fresh `init` + `import` of the same 441-note vault, then `extract all`, produced **1 link**.
+
+Setting one config key and re-extracting produced **1,556 links** from the identical corpus:
+
+```bash
+gbrain config set link_resolution.global_basename true
+gbrain extract all
+```
+
+`link_resolution.global_basename` gates the `wikilink_basename` resolver, which is how
+`[[Some Note]]` resolves to `some-note` when the link text is not a full slug. In v0.42.65.0 it
+defaults to **false**. Brains grown incrementally still carry links created when the resolver ran,
+so they look healthy and hide the regression; only a fresh build exposes it.
+
+**A rebuild therefore works, but only in this order:**
+
+```bash
+# serve stopped, brain.pglite copied aside first
+gbrain init --pglite --embedding-model ollama:nomic-embed-text
+gbrain config set link_resolution.global_basename true   # BEFORE extracting
+gbrain import <vault>
+gbrain extract all
+gbrain auth create <name>            # tokens live in the DB and are wiped by init
+# then write the new token over GBRAIN_REMOTE_TOKEN in ~/.secrets/.env
+```
+
+Verify with `get_health`: `link_coverage` must be 1.0 and `orphan_pages` in the expected range
+before putting the brain back in service. Setting the flag on an already-healthy brain is a no-op
+(0 new links) and harmless, so set it now so a future rebuild inherits it.
+
