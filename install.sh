@@ -38,7 +38,7 @@ mkdir -p "$LAUNCH_DIR"
 # ai.gbrain.doctor is the knowledge-health sentinel. It is NOT optional: it is the
 # only thing that notices when the brain silently degrades, and every real fault in
 # this stack has been silent. It is read-only and cheap (one MCP call per day).
-AGENTS=(ai.gbrain.server ai.gbrain.sync ai.gbrain.env ai.gbrain.doctor)
+AGENTS=(ai.gbrain.server ai.gbrain.sync ai.gbrain.env ai.gbrain.doctor ai.gbrain.lessons)
 # enrichment is optional/heavier — install it only with --enrichment
 if [[ "${1:-}" == "--enrichment" ]]; then AGENTS+=(ai.gbrain.enrichment); fi
 
