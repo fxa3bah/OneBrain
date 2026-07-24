@@ -78,3 +78,45 @@ rm ~/.gbrain/ENRICHMENT_DISABLED
 # Tail logs
 tail -f ~/.gbrain/logs/server.err.log ~/.gbrain/logs/sync.out.log
 ```
+
+## A rogue `com.gbrain.autopilot` LaunchAgent (found 2026-07-24)
+
+Symptom: `apply-migrations` fails with "Timed out waiting for PGLite data-dir lock",
+naming a process running `gbrain autopilot --repo <some old vault path>`.
+
+Cause: `gbrain autopilot --install` writes its own LaunchAgent, `com.gbrain.autopilot`,
+which is NOT part of OneBrain (OneBrain uses the `ai.gbrain.*` prefix). On this machine it
+survived the 2026-06-12 vault move off iCloud and was still pointed at the old
+`~/Library/Mobile Documents/iCloud~md~obsidian/.../Hermes` path, which no longer exists.
+With `KeepAlive=true` and `ThrottleInterval=60` it crash-looped every 60 seconds, taking
+the PGLite write lock on each attempt and logging `[cycle.purge] done` against a vault it
+could not see.
+
+Why it matters: it blocked migrations, and an autopilot purge cycle pointed at a missing
+vault is a data-loss shape. Verify page counts after finding one.
+
+Fix:
+```bash
+launchctl bootout gui/$(id -u)/com.gbrain.autopilot
+mv ~/Library/LaunchAgents/com.gbrain.autopilot.plist ~/.gbrain/disabled-launchagents/
+rm -rf ~/.gbrain/brain.pglite/.gbrain-lock   # only after confirming the holder PID is dead
+```
+
+Check for it with `launchctl list | grep gbrain` and treat any `com.gbrain.*` label as
+foreign to OneBrain.
+
+## `apply-migrations` needs a `gbrain` binary on PATH
+
+Its smoke and host-work phases shell out to `gbrain`. If you deliberately keep no such
+binary, migrations apply but are recorded as PARTIAL or FAILED, and `doctor` then reports
+`[FAIL] minions_migration: MINIONS HALF-INSTALLED`. Give it a temporary shim:
+
+```bash
+SHIM=$(mktemp -d)
+printf '#!/bin/bash\nexec bun run ~/Code/gbrain/src/cli.ts "$@"\n' > "$SHIM/gbrain"
+chmod +x "$SHIM/gbrain"
+PATH="$SHIM:$PATH" bun run ~/Code/gbrain/src/cli.ts apply-migrations --yes
+rm -rf "$SHIM"
+```
+
+Re-run until it prints "All migrations up to date", then confirm `doctor` shows no FAIL.
