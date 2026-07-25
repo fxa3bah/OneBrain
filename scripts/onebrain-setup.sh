@@ -79,7 +79,28 @@ while :; do
     fi
   fi
   ok "vault: $VAULT ($(find "$VAULT" -name '*.md' -not -path '*/.git/*' 2>/dev/null | wc -l | tr -d ' ') notes)"
-  put OBSIDIAN_VAULT_PATH "$VAULT"; break
+  put OBSIDIAN_VAULT_PATH "$VAULT"
+
+  # Pin the shared lessons note. Prefer an existing Agent Lessons.md anywhere in
+  # the vault over a vault-root default that would orphan the real note on upgrade.
+  export OBSIDIAN_VAULT_PATH="$VAULT"
+  # shellcheck source=../bin/onebrain-common.sh
+  # Resolve using the repo copy (setup can run before install copies wrappers).
+  _COMMON="$(cd "$(dirname "$0")/.." && pwd)/bin/onebrain-common.sh"
+  if [ -f "$_COMMON" ]; then
+    # shellcheck disable=SC1090
+    source "$_COMMON"
+    _lessons_err="$(mktemp)"
+    if LESSONS_NOTE="$(pin_lessons_note 2>"$_lessons_err")"; then
+      ok "lessons note: $LESSONS_NOTE"
+    else
+      bad "could not resolve Agent Lessons.md"
+      [ -s "$_lessons_err" ] && sed 's/^/     /' "$_lessons_err"
+      need "set ONEBRAIN_LESSONS_NOTE or create the PARA-path note under the vault"
+    fi
+    rm -f "$_lessons_err"
+  fi
+  break
 done
 
 # --------------------------------------------------------------- gbrain -----

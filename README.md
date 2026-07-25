@@ -248,6 +248,12 @@ Those corrections are worth keeping, and they are worth sharing across every age
 - **The vault note** holds two sections: **Rules** (hard-capped, binding, injected at every
   session start) and an append-only **Log** they were distilled from. It lives in the vault,
   so every agent reads the same rules and a brain rebuild cannot destroy them.
+  Path is **resolved, not guessed**: install/setup discover any existing
+  `Agent Lessons.md` in the vault and pin `ONEBRAIN_LESSONS_NOTE` in `~/.secrets/.env`.
+  Runtime refuses a pin that points at a missing file when another candidate exists
+  (would orphan the real note while the job still reports ok — the failure class the
+  sentinel cannot see). Fresh installs default to
+  `$OBSIDIAN_VAULT_PATH/30 Areas/AI & Systems/Agent Lessons.md`, never the vault root.
 - **`bin/onebrain-notify.sh`** is the one place that knows how to reach a human: Telegram,
   macOS notification, and a log file. Each channel is optional and no-ops silently when
   unconfigured. gbrain has no notification layer of its own, so this belongs to the wrapper.

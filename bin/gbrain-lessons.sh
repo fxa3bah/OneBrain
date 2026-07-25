@@ -22,7 +22,6 @@ source "$(dirname "$0")/onebrain-common.sh"
 GBR="$GBRAIN_HOME"
 HEARTBEAT="$GBR/heartbeats/lessons.json"
 LOG="$GBR/logs/lessons.log"
-export NOTE="${ONEBRAIN_LESSONS_NOTE:-$OBSIDIAN_VAULT_PATH/Agent Lessons.md}"
 MODEL="gemma3:4b"
 MAX_CHARS=24000          # bound the prompt; a 4B model degrades on long input
 LOCK="$GBR/lessons.lock.d"
@@ -32,18 +31,35 @@ TS="$(date -u +%FT%TZ)"
 log(){ echo "$TS $*" >> "$LOG"; }
 
 SESSIONS=0; FOUND=0; STATUS="error"; DETAIL=""
+NOTE=""
 
 # Heartbeat on EVERY exit path. This is the load-bearing line of the whole file.
 finish(){
+  # Escape detail for JSON (quotes/backslashes/newlines) so a path never breaks the file.
+  local detail_json
+  detail_json="$(printf '%s' "$DETAIL" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read())[1:-1])' 2>/dev/null || printf '%s' "$DETAIL" | tr -d '"\\')"
   printf '{"ts":"%s","status":"%s","sessions_scanned":%d,"lessons_found":%d,"detail":"%s"}\n' \
-    "$TS" "$STATUS" "$SESSIONS" "$FOUND" "$DETAIL" > "$HEARTBEAT"
-  log "done status=$STATUS sessions=$SESSIONS lessons=$FOUND ${DETAIL:+detail=$DETAIL}"
+    "$TS" "$STATUS" "$SESSIONS" "$FOUND" "$detail_json" > "$HEARTBEAT"
+  log "done status=$STATUS sessions=$SESSIONS lessons=$FOUND note=${NOTE:-?} ${DETAIL:+detail=$DETAIL}"
   rmdir "$LOCK" 2>/dev/null
   exit 0
 }
 trap finish EXIT
 
 if ! mkdir "$LOCK" 2>/dev/null; then STATUS="ok"; DETAIL="already running"; exit 0; fi
+
+# Resolve write target BEFORE any work. A wrong default that still exits "ok"
+# is the failure class the sentinel exists to prevent — the job runs, the
+# heartbeat is green, and lessons land in a root-level orphan (or nowhere).
+_resolve_err="$GBR/logs/lessons-resolve.err"
+if ! NOTE="$(resolve_lessons_note 2>"$_resolve_err")"; then
+  STATUS="error"
+  DETAIL="lessons note unresolved: $(tr '\n' ' ' <"$_resolve_err" 2>/dev/null | head -c 200)"
+  rm -f "$_resolve_err"
+  exit 0
+fi
+rm -f "$_resolve_err"
+export NOTE
 
 # --- 1. collect transcripts changed in the last 24h -------------------------
 TRANSCRIPTS="$(find "$HOME/.claude/projects" "$HOME/.codex/sessions" "$HOME/.grok/sessions" \
@@ -120,8 +136,15 @@ esac
 LESSONS="$(printf '%s\n' "$RESP" | grep -E '^CLAIM:' | head -5 || true)"
 FOUND="$(printf '%s' "$LESSONS" | grep -c . || true)"
 
-if [ "$FOUND" -gt 0 ] && [ -f "$NOTE" ]; then
-  printf '%s\n' "$LESSONS" | python3 -c "
+if [ "$FOUND" -gt 0 ]; then
+  if [ ! -f "$NOTE" ]; then
+    # Do not create a second note in a surprise location. Fresh installs should
+    # seed the PARA path deliberately; upgrades must never invent a root orphan.
+    STATUS="error"
+    DETAIL="lessons found but note missing at $NOTE — create it or repin ONEBRAIN_LESSONS_NOTE"
+    exit 0
+  fi
+  if ! printf '%s\n' "$LESSONS" | python3 -c "
 import sys,os,datetime,re
 note=os.environ['NOTE']; date=datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d')
 lines=[]
@@ -130,9 +153,12 @@ for raw in sys.stdin:
     if m: lines.append(f'- \`{date} | {m.group(1)} | {m.group(2)} | {m.group(3)}\`')
 if lines:
     with open(note,'a') as f: f.write('\n'.join(lines)+'\n')
-" 2>/dev/null || true
-  "$GBR/bin/onebrain-notify.sh" "$FOUND new lesson(s) captured from $SESSIONS session(s). See Agent Lessons.md" "OneBrain lessons" 2>/dev/null || true
+"; then
+    STATUS="error"; DETAIL="failed appending to $NOTE"; exit 0
+  fi
+  "$GBR/bin/onebrain-notify.sh" "$FOUND new lesson(s) captured from $SESSIONS session(s). See $NOTE" "OneBrain lessons" 2>/dev/null || true
+  STATUS="ok"; DETAIL="appended to $NOTE"; exit 0
 fi
 
-STATUS="ok"
+STATUS="ok"; DETAIL="note=$NOTE"
 exit 0

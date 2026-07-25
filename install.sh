@@ -41,6 +41,23 @@ if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
   }
 fi
 
+# Pin the lessons note even when setup is skipped. The prior default
+# ($vault/Agent Lessons.md at vault root) was a landmine: re-running install on
+# an existing vault that already keeps the note under 30 Areas/ would leave
+# ONEBRAIN_LESSONS_NOTE unset, and the job would either write a root orphan or
+# drop lessons while still reporting ok. Discover any existing Agent Lessons.md
+# and pin it; refuse if a pin points at a missing path while another exists.
+# shellcheck source=bin/onebrain-common.sh
+source "$BIN_DIR/onebrain-common.sh"
+if PINNED_NOTE="$(pin_lessons_note)"; then
+  echo "[ok] lessons note pinned: $PINNED_NOTE"
+else
+  echo "[!!] could not resolve Agent Lessons.md in the vault"
+  echo "     Set ONEBRAIN_LESSONS_NOTE in ~/.secrets/.env to the real note path,"
+  echo "     or place one at: \$OBSIDIAN_VAULT_PATH/$ONEBRAIN_LESSONS_PARA_REL"
+  exit 1
+fi
+
 # Default enrichment tier = 1 (offline housekeeping only). Bump to 2/3 yourself later.
 [ -f "$GBRAIN_HOME/ENRICHMENT_TIER" ] || echo "1" > "$GBRAIN_HOME/ENRICHMENT_TIER"
 
