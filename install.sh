@@ -24,12 +24,6 @@ command -v bun  >/dev/null || { echo "ERROR: bun not found. Install from https:/
 command -v ollama >/dev/null || echo "WARN: ollama not found — needed for offline embeddings (https://ollama.com)"
 [ -f "$HOME/.secrets/.env" ] || echo "WARN: ~/.secrets/.env missing — copy .env.example there and fill it in BEFORE the agents will work."
 
-# --- scripts ---
-mkdir -p "$BIN_DIR" "$GBRAIN_HOME/logs"
-cp "$REPO_DIR"/bin/*.sh "$BIN_DIR"/
-chmod +x "$BIN_DIR"/*.sh
-echo "[ok] wrapper scripts installed"
-
 # Run setup first unless the caller opts out. It verifies every value rather than
 # collecting it — a config that exists and a config that works are different states,
 # and shipping people the second one is the whole point.
@@ -41,14 +35,16 @@ if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
   }
 fi
 
-# Pin the lessons note even when setup is skipped. The prior default
+# Pin the lessons note BEFORE copying wrappers. The prior default
 # ($vault/Agent Lessons.md at vault root) was a landmine: re-running install on
 # an existing vault that already keeps the note under 30 Areas/ would leave
 # ONEBRAIN_LESSONS_NOTE unset, and the job would either write a root orphan or
 # drop lessons while still reporting ok. Discover any existing Agent Lessons.md
 # and pin it; refuse if a pin points at a missing path while another exists.
+# Use the repo copy of onebrain-common so this works even when ~/.gbrain/bin is
+# still on the old wrappers (or empty).
 # shellcheck source=bin/onebrain-common.sh
-source "$BIN_DIR/onebrain-common.sh"
+source "$REPO_DIR/bin/onebrain-common.sh"
 if PINNED_NOTE="$(pin_lessons_note)"; then
   echo "[ok] lessons note pinned: $PINNED_NOTE"
 else
@@ -57,6 +53,12 @@ else
   echo "     or place one at: \$OBSIDIAN_VAULT_PATH/$ONEBRAIN_LESSONS_PARA_REL"
   exit 1
 fi
+
+# --- scripts (only after pin succeeds) ---
+mkdir -p "$BIN_DIR" "$GBRAIN_HOME/logs"
+cp "$REPO_DIR"/bin/*.sh "$BIN_DIR"/
+chmod +x "$BIN_DIR"/*.sh
+echo "[ok] wrapper scripts installed"
 
 # Default enrichment tier = 1 (offline housekeeping only). Bump to 2/3 yourself later.
 [ -f "$GBRAIN_HOME/ENRICHMENT_TIER" ] || echo "1" > "$GBRAIN_HOME/ENRICHMENT_TIER"
