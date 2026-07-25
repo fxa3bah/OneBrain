@@ -1,7 +1,9 @@
 #!/bin/bash
 # OneBrain installer.
 # Copies wrapper scripts to ~/.gbrain/bin, installs LaunchAgents (with __HOME__ substituted),
-# and loads them. Idempotent: safe to re-run. Does NOT touch your secrets or your vault.
+# and loads them. Idempotent: safe to re-run. Does not touch your vault; before any
+# runtime changes, it may persist ONEBRAIN_LESSONS_NOTE in your secrets file so an
+# existing lessons note cannot be silently split by an upgrade.
 #
 # Prereqs (see README): bun, Ollama + `ollama pull nomic-embed-text`, a gbrain checkout,
 # an Obsidian vault under git, and ~/.secrets/.env populated from .env.example.

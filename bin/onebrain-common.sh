@@ -40,16 +40,16 @@ ONEBRAIN_LESSONS_PARA_REL="30 Areas/AI & Systems/Agent Lessons.md"
 #      → REFUSE. Writing the pin would orphan the real note (silent split-brain).
 #   3. If unset: discover every "Agent Lessons.md" under the vault.
 #        - exactly one → use it
-#        - several → prefer the PARA path if present, else any under "30 Areas/",
-#          else refuse (ambiguous)
+#        - several → use only the exact PARA path when present; otherwise refuse
+#          (ambiguous)
 #        - none → return the PARA default path (caller may create on first write)
 #   4. Never invent a vault-root default when a real candidate exists elsewhere.
 resolve_lessons_note() {
   local vault="${OBSIDIAN_VAULT_PATH:-}"
   local pinned="${ONEBRAIN_LESSONS_NOTE:-}"
-  local para root
+  local para
   local -a found=()
-  local f preferred=""
+  local f
 
   if [ -z "$vault" ] || [ ! -d "$vault" ]; then
     echo "resolve_lessons_note: OBSIDIAN_VAULT_PATH missing or not a directory: ${vault:-<empty>}" >&2
@@ -57,8 +57,6 @@ resolve_lessons_note() {
   fi
 
   para="$vault/$ONEBRAIN_LESSONS_PARA_REL"
-  root="$vault/Agent Lessons.md"
-
   # Collect existing notes (null-safe; skip .git).
   while IFS= read -r -d '' f; do
     found+=("$f")
@@ -95,22 +93,16 @@ resolve_lessons_note() {
       return 0
       ;;
     *)
-      # Prefer PARA, then any under "30 Areas/", else refuse.
+      # Multiple matches are unsafe to infer. Only the documented PARA path is
+      # deterministic; choosing the first find result could silently pin a
+      # different note and leave the real lessons stream orphaned.
       for f in "${found[@]}"; do
-        if [ "$f" = "$para" ]; then preferred="$f"; break; fi
+        if [ "$f" = "$para" ]; then
+          printf '%s\n' "$f"
+          return 0
+        fi
       done
-      if [ -z "$preferred" ]; then
-        for f in "${found[@]}"; do
-          case "$f" in
-            "$vault/30 Areas/"*|"$vault/30-areas/"*) preferred="$f"; break ;;
-          esac
-        done
-      fi
-      if [ -n "$preferred" ]; then
-        printf '%s\n' "$preferred"
-        return 0
-      fi
-      echo "resolve_lessons_note: multiple Agent Lessons.md files, none at the PARA path:" >&2
+      echo "resolve_lessons_note: multiple Agent Lessons.md files, none at the exact PARA path:" >&2
       for f in "${found[@]}"; do echo "  $f" >&2; done
       echo "  Set ONEBRAIN_LESSONS_NOTE explicitly to the one that should receive appends." >&2
       return 1

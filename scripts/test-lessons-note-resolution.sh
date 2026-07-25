@@ -39,6 +39,25 @@ if run_common "$VAULT" "$SECRETS" 'resolve_lessons_note' >/dev/null 2>&1; then
   fail "stale explicit pin unexpectedly resolved"
 fi
 
+# Multiple candidates without the exact PARA path are ambiguous. Never choose the
+# first result from find: that recreates the green-heartbeat/wrong-note failure.
+MULTI_VAULT="$TMP_DIR/multi-vault"
+mkdir -p "$MULTI_VAULT/30 Areas/Other" "$MULTI_VAULT/50 Resources/Reference"
+touch "$MULTI_VAULT/30 Areas/Other/Agent Lessons.md"
+touch "$MULTI_VAULT/50 Resources/Reference/Agent Lessons.md"
+if run_common "$MULTI_VAULT" "$TMP_DIR/multi-secrets.env" 'resolve_lessons_note' >/dev/null 2>&1; then
+  fail "ambiguous lessons notes unexpectedly resolved"
+fi
+
+# Multiple notes are safe only when the documented PARA note is present: it is the
+# deterministic target, regardless of find order.
+PARA_MULTI_VAULT="$TMP_DIR/para-multi-vault"
+PARA_MULTI_NOTE="$PARA_MULTI_VAULT/30 Areas/AI & Systems/Agent Lessons.md"
+mkdir -p "$(dirname "$PARA_MULTI_NOTE")" "$PARA_MULTI_VAULT/50 Resources/Reference"
+touch "$PARA_MULTI_NOTE" "$PARA_MULTI_VAULT/50 Resources/Reference/Agent Lessons.md"
+resolved="$(run_common "$PARA_MULTI_VAULT" "$TMP_DIR/para-multi-secrets.env" 'resolve_lessons_note')"
+assert_eq "$resolved" "$PARA_MULTI_NOTE"
+
 # The installer must invoke the pinning step before it copies wrappers or loads agents.
 pin_line="$(grep -n 'pin_lessons_note' "$INSTALLER" | head -n 1 | cut -d: -f1)"
 copy_line="$(grep -n 'cp "\$REPO_DIR"/bin/\*.sh' "$INSTALLER" | head -n 1 | cut -d: -f1)"
